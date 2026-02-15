@@ -1,0 +1,23 @@
+<div class="w-full max-w-md">
+  <div class="bg-neutral-900 border-2 border-neutral-700 p-6 shadow-[4px_4px_0_0_#1a1a1a]">
+    <% if notice = flash[:notice] %>
+      <div class="p-3 bg-[#00ff88]/10 border-2 border-[#00ff88]/50 mb-6">
+        <p class="text-[#00ff88] text-sm"><%= notice %></p>
+      </div>
+    <% end %>
+
+    <h1 class="text-2xl uppercase tracking-wider text-[#00ff88] mb-2"><%= Account.first&.name || "Outpost" %></h1>
+    <p class="text-sm text-neutral-500">Logged in as <span class="text-neutral-300"><%= Current.user.email_address %></span></p>
+
+    <div class="mt-6 pt-6 border-t-2 border-neutral-800">
+      <p class="text-neutral-400 text-sm mb-4">Chat functionality coming soon...</p>
+      
+      <div class="flex gap-3">
+        <% if Current.user.admin? %>
+          <%= link_to "Settings", settings_path, class: "px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border-2 border-neutral-600 shadow-[4px_4px_0_0_#333] hover:shadow-[2px_2px_0_0_#333] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer uppercase tracking-wide text-sm" %>
+        <% end %>
+        <%= button_to "Sign Out", session_path, method: :delete, class: "px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border-2 border-neutral-600 shadow-[4px_4px_0_0_#333] hover:shadow-[2px_2px_0_0_#333] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer uppercase tracking-wide text-sm" %>
+      </div>
+    </div>
+  </div>
+</div>
