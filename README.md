@@ -52,3 +52,4 @@ bin/rails test
 - **SQLite3** - Simple, self-contained database
 - **Hotwire** - Turbo + Stimulus for real-time UI
 - **Tailwind CSS** - Retro-techy styling
+# Trigger rebuild
