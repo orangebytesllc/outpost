@@ -26,6 +26,7 @@ class JoinControllerTest < ActionDispatch::IntegrationTest
     assert_difference "User.count", 1 do
       post join_path(token: accounts(:one).invite_token), params: {
         user: {
+          name: "New User",
           email_address: "newuser@example.com",
           password: "password123",
           password_confirmation: "password123"

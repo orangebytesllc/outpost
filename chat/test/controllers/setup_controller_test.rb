@@ -24,6 +24,7 @@ class SetupControllerTest < ActionDispatch::IntegrationTest
     post setup_path, params: {
       account: { name: "My Team" },
       user: {
+        name: "Admin User",
         email_address: "admin@example.com",
         password: "password123",
         password_confirmation: "password123"

@@ -1,0 +1,61 @@
+<div class="w-full max-w-md">
+  <div class="bg-neutral-900 border-2 border-neutral-700 p-6 shadow-[4px_4px_0_0_#1a1a1a]">
+    <% if notice = flash[:notice] %>
+      <div class="p-3 bg-[#00ff88]/10 border-2 border-[#00ff88]/50 mb-6">
+        <p class="text-[#00ff88] text-sm"><%= notice %></p>
+      </div>
+    <% end %>
+
+    <h1 class="text-2xl uppercase tracking-wider text-[#00ff88] mb-6">Profile</h1>
+
+    <%= form_with model: Current.user, url: profile_path, method: :patch, class: "space-y-6" do |form| %>
+      <% if Current.user.errors.any? %>
+        <div class="p-3 bg-red-900/30 border-2 border-red-700">
+          <% Current.user.errors.full_messages.each do |message| %>
+            <p class="text-red-400 text-sm"><%= message %></p>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%# Avatar %>
+      <div>
+        <label class="block text-sm text-neutral-400 uppercase tracking-wide mb-3">Avatar</label>
+        <div class="flex items-center gap-4">
+          <div class="w-16 h-16 bg-neutral-700 border-2 border-neutral-600 flex-shrink-0 flex items-center justify-center text-xl text-neutral-400 overflow-hidden">
+            <% if Current.user.avatar.attached? %>
+              <%= image_tag Current.user.avatar, class: "w-full h-full object-cover" %>
+            <% else %>
+              <%= Current.user.name.first.upcase %>
+            <% end %>
+          </div>
+          <div class="flex-1">
+            <%= form.file_field :avatar, 
+                accept: "image/*",
+                class: "block w-full text-sm text-neutral-400 file:mr-4 file:py-2 file:px-4 file:border-2 file:border-neutral-600 file:text-sm file:font-medium file:bg-neutral-800 file:text-neutral-200 hover:file:bg-neutral-700 file:cursor-pointer file:uppercase file:tracking-wide" %>
+            <p class="mt-1 text-xs text-neutral-500">JPG, PNG, or GIF. Max 5MB.</p>
+          </div>
+        </div>
+      </div>
+
+      <%# Name %>
+      <div>
+        <%= form.label :name, class: "block text-sm text-neutral-400 uppercase tracking-wide" %>
+        <%= form.text_field :name, required: true, class: "mt-1 w-full px-3 py-2 bg-neutral-800 text-neutral-200 border-2 border-neutral-700 focus:border-[#00ff88] focus:outline-none focus:shadow-[0_0_10px_rgba(0,255,136,0.3)] placeholder:text-neutral-600" %>
+      </div>
+
+      <%# Email (read-only) %>
+      <div>
+        <label class="block text-sm text-neutral-400 uppercase tracking-wide">Email</label>
+        <p class="mt-1 px-3 py-2 text-neutral-400"><%= Current.user.email_address %></p>
+      </div>
+
+      <div class="pt-2">
+        <%= form.submit "Save", class: "px-4 py-2 bg-[#00ff88] hover:bg-[#00cc6a] text-black font-medium border-2 border-black shadow-[4px_4px_0_0_#000] hover:shadow-[2px_2px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer uppercase tracking-wide" %>
+      </div>
+    <% end %>
+
+    <div class="pt-6 border-t-2 border-neutral-800 mt-6">
+      <%= link_to "Back", root_path, class: "text-sm text-neutral-500 hover:text-[#00ff88] transition-colors" %>
+    </div>
+  </div>
+</div>

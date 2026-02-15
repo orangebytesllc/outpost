@@ -67,6 +67,7 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     sign_in_as users(:one)
     other_account = Account.create!(name: "Other Account")
     other_user = other_account.users.create!(
+      name: "Other User",
       email_address: "other@example.com",
       password: "password123"
     )

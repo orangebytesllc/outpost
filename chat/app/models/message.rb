@@ -12,6 +12,6 @@ class Message < ApplicationRecord
     broadcast_append_to room,
       target: "messages",
       partial: "messages/message",
-      locals: { message: self }
+      locals: { message: Message.includes(user: { avatar_attachment: :blob }).find(id) }
   end
 end

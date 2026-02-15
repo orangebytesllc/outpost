@@ -10,6 +10,9 @@ Rails.application.routes.draw do
     post :regenerate_invite_token, on: :member
   end
 
+  # Profile
+  resource :profile, only: [ :show, :update ]
+
   # User management (admin only)
   resources :users, only: [ :update, :destroy ]
 

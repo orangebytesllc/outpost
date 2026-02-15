@@ -7,6 +7,7 @@ account = Account.create!(name: "Outpost Dev")
 
 # Create admin user
 admin = account.users.create!(
+  name: "Alice Admin",
   email_address: "admin@example.com",
   password: "password",
   password_confirmation: "password",
@@ -15,6 +16,7 @@ admin = account.users.create!(
 
 # Create regular user
 user = account.users.create!(
+  name: "Bob User",
   email_address: "user@example.com",
   password: "password",
   password_confirmation: "password",
