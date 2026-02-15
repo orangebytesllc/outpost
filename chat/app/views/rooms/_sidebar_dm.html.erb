@@ -1,0 +1,14 @@
+<%# other_user can be passed explicitly (for broadcasts) or derived from Current.user %>
+<% other_user = local_assigns[:other_user] || dm.other_participant(Current.user) %>
+<%= link_to room_path(dm), 
+    id: dom_id(dm, :sidebar),
+    class: "flex items-center gap-2 px-3 py-2 text-sm #{dm == current_room ? 'text-neutral-200 bg-neutral-800 border-l-2 border-[#00ff88]' : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 border-l-2 border-transparent'}",
+    data: { action: "click->sidebar#close" } do %>
+  <div class="relative flex-shrink-0">
+    <%= render "users/avatar", user: other_user, size: "xs" %>
+    <% if dm.respond_to?(:unread?) && dm.unread? && dm != current_room %>
+      <span class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#00ff88] border border-neutral-900"></span>
+    <% end %>
+  </div>
+  <span class="truncate"><%= other_user&.name || "Unknown" %></span>
+<% end %>

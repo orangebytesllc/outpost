@@ -1,6 +1,7 @@
 <% content_for :fullscreen, true %>
 
 <div class="flex h-full" data-controller="sidebar dm-search room-create room-browse room-settings">
+  <%= turbo_stream_from "user_#{Current.user.id}_sidebar" %>
   <%= render "rooms/sidebar", room: @room, channels: @channels, direct_messages: @direct_messages %>
 
   <%# Main content %>

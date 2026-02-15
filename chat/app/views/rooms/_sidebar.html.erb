@@ -79,22 +79,13 @@
         </svg>
       </button>
     </div>
-    <% direct_messages.each do |dm| %>
-      <% other_user = dm.other_participant(Current.user) %>
-      <%= link_to room_path(dm), 
-          class: "flex items-center gap-2 px-3 py-2 text-sm #{dm == room ? 'text-neutral-200 bg-neutral-800 border-l-2 border-[#00ff88]' : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800 border-l-2 border-transparent'}",
-          data: { action: "click->sidebar#close" } do %>
-        <div class="relative flex-shrink-0">
-          <%= render "users/avatar", user: other_user, size: "xs" %>
-          <% if dm.unread? && dm != room %>
-            <span class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#00ff88] border border-neutral-900"></span>
-          <% end %>
-        </div>
-        <span class="truncate"><%= other_user&.name || "Unknown" %></span>
+    <div id="direct-messages-list">
+      <% direct_messages.each do |dm| %>
+        <%= render "rooms/sidebar_dm", dm: dm, current_room: room %>
       <% end %>
-    <% end %>
+    </div>
     <% if direct_messages.empty? %>
-      <div class="px-3 py-2 text-xs text-neutral-600 italic">No conversations yet</div>
+      <div id="no-dms-placeholder" class="px-3 py-2 text-xs text-neutral-600 italic">No conversations yet</div>
     <% end %>
   </nav>
 
