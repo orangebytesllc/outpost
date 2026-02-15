@@ -8,6 +8,7 @@ class User < ApplicationRecord
   has_many :rooms, through: :memberships
   has_many :messages, dependent: :destroy
   has_many :room_reads, dependent: :destroy
+  has_many :push_subscriptions, dependent: :destroy
   belongs_to :account
 
   scope :search_by_name, ->(query) {

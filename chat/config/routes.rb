@@ -13,6 +13,11 @@ Rails.application.routes.draw do
   # Profile
   resource :profile, only: [ :show, :update ]
 
+  # Push notifications
+  resources :push_subscriptions, only: [ :create, :destroy ] do
+    get :vapid_public_key, on: :collection
+  end
+
   # User management (admin only)
   resources :users, only: [ :update, :destroy ]
 

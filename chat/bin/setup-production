@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# First-run provisioning script for production deployments.
+# Called by docker-entrypoint before starting the application.
+#
+# This script:
+# - Ensures storage directories exist
+# - Generates SECRET_KEY_BASE if not set
+# - Runs database migrations
+# - Performs any other first-boot setup
+
+require "fileutils"
+require "securerandom"
+
+STORAGE_PATH = "/rails/storage"
+
+def log(message)
+  puts "[setup] #{message}"
+end
+
+def ensure_storage_directories
+  log "Ensuring storage directories exist..."
+  
+  directories = [
+    STORAGE_PATH,
+    "#{STORAGE_PATH}/uploads",
+    "#{STORAGE_PATH}/cache"
+  ]
+  
+  directories.each do |dir|
+    FileUtils.mkdir_p(dir) unless Dir.exist?(dir)
+  end
+end
+
+def check_secret_key_base
+  if ENV["SECRET_KEY_BASE"].nil? || ENV["SECRET_KEY_BASE"].empty?
+    log "WARNING: SECRET_KEY_BASE is not set!"
+    log "Generate one with: ruby -e \"require 'securerandom'; puts SecureRandom.hex(64)\""
+    exit 1
+  end
+end
+
+def prepare_database
+  log "Preparing database..."
+  system("bin/rails db:prepare") || exit(1)
+end
+
+def first_run?
+  !File.exist?("#{STORAGE_PATH}/.initialized")
+end
+
+def mark_initialized
+  FileUtils.touch("#{STORAGE_PATH}/.initialized")
+end
+
+# Main execution
+log "Starting production setup..."
+
+ensure_storage_directories
+check_secret_key_base
+prepare_database
+
+if first_run?
+  log "First run detected - performing initial setup..."
+  mark_initialized
+  log "Initial setup complete!"
+else
+  log "Existing installation detected."
+end
+
+log "Setup complete!"

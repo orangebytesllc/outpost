@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_15_163945) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_15_193258) do
   create_table "accounts", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "invite_token"
@@ -69,6 +69,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_163945) do
     t.index ["user_id"], name: "index_messages_on_user_id"
   end
 
+  create_table "push_subscriptions", force: :cascade do |t|
+    t.string "auth", null: false
+    t.datetime "created_at", null: false
+    t.string "endpoint", null: false
+    t.string "p256dh", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["endpoint"], name: "index_push_subscriptions_on_endpoint", unique: true
+    t.index ["user_id"], name: "index_push_subscriptions_on_user_id"
+  end
+
   create_table "room_reads", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "last_read_at", null: false
@@ -121,6 +132,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_15_163945) do
   add_foreign_key "memberships", "users"
   add_foreign_key "messages", "rooms"
   add_foreign_key "messages", "users"
+  add_foreign_key "push_subscriptions", "users"
   add_foreign_key "room_reads", "rooms"
   add_foreign_key "room_reads", "users"
   add_foreign_key "rooms", "accounts"

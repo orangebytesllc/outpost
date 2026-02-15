@@ -12,6 +12,9 @@ class MessageBroadcast
       target: "messages",
       partial: "messages/message",
       locals: { message: preloaded_message }
+
+    # Send push notifications to other room members
+    send_push_notifications
   end
 
   def deliver_update
@@ -38,5 +41,35 @@ class MessageBroadcast
 
   def preloaded_message
     Message.includes(user: { avatar_attachment: :blob }).find(@message.id)
+  end
+
+  def send_push_notifications
+    return unless PushSubscription.configured?
+
+    room = @message.room
+    sender = @message.user
+
+    # Get all room members except the sender
+    recipients = room.users.where.not(id: sender.id)
+
+    # Prepare notification content
+    title = room.direct_message? ? sender.name : "##{room.name}"
+    body = truncate_body(@message.body)
+    path = "/rooms/#{room.id}"
+
+    # Enqueue push notification jobs for each recipient
+    recipients.find_each do |recipient|
+      PushNotificationJob.perform_later(
+        recipient.id,
+        title: title,
+        body: body,
+        path: path
+      )
+    end
+  end
+
+  def truncate_body(text, max_length: 100)
+    return text if text.length <= max_length
+    "#{text[0, max_length - 1]}..."
   end
 end

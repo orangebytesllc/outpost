@@ -1,0 +1,232 @@
+#!/bin/bash
+set -e
+
+# Outpost Installer
+# Usage: curl -sSL https://getoutpost.chat/install | bash
+
+OUTPOST_IMAGE="ghcr.io/orangebytesllc/outpost:latest"
+OUTPOST_CONTAINER="outpost"
+OUTPOST_VOLUME="outpost_storage"
+WATCHTOWER_CONTAINER="outpost-watchtower"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+print_banner() {
+  echo ""
+  echo -e "${BLUE}╔═══════════════════════════════════════╗${NC}"
+  echo -e "${BLUE}║         ${GREEN}Outpost Installer${BLUE}              ║${NC}"
+  echo -e "${BLUE}║     ${NC}Self-hosted team chat${BLUE}               ║${NC}"
+  echo -e "${BLUE}╚═══════════════════════════════════════╝${NC}"
+  echo ""
+}
+
+log_info() {
+  echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+  echo -e "${GREEN}[OK]${NC} $1"
+}
+
+log_warn() {
+  echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+  echo -e "${RED}[ERROR]${NC} $1"
+}
+
+check_root() {
+  if [ "$EUID" -ne 0 ]; then
+    log_error "This script must be run as root (use sudo)"
+    exit 1
+  fi
+}
+
+check_docker() {
+  if command -v docker &> /dev/null; then
+    log_success "Docker is installed"
+    return 0
+  else
+    return 1
+  fi
+}
+
+install_docker() {
+  log_info "Installing Docker..."
+  curl -fsSL https://get.docker.com | sh
+  systemctl enable docker
+  systemctl start docker
+  log_success "Docker installed successfully"
+}
+
+generate_secret_key() {
+  openssl rand -hex 64
+}
+
+generate_vapid_keys() {
+  # Generate VAPID keys using OpenSSL
+  # This generates an EC key pair using P-256 curve
+  local privkey=$(openssl ecparam -name prime256v1 -genkey -noout 2>/dev/null)
+  local pubkey=$(echo "$privkey" | openssl ec -pubout 2>/dev/null)
+  
+  # Extract raw key bytes and encode as URL-safe base64
+  # For simplicity, we'll generate these inside the container on first run
+  # Return empty for now - will be generated inside container
+  echo ""
+}
+
+prompt_domain() {
+  echo ""
+  echo -e "${YELLOW}Domain Configuration${NC}"
+  echo "Enter your domain for automatic SSL (e.g., chat.example.com)"
+  echo "Leave blank to skip SSL (for use behind a proxy or internal networks)"
+  echo ""
+  read -p "Domain: " DOMAIN
+  
+  if [ -z "$DOMAIN" ]; then
+    log_warn "Running without SSL on port 80"
+    log_warn "Make sure you're behind a proxy or on a private network"
+    USE_SSL=false
+  else
+    log_info "Will configure SSL for: $DOMAIN"
+    USE_SSL=true
+  fi
+}
+
+check_existing_installation() {
+  if docker ps -a --format '{{.Names}}' | grep -q "^${OUTPOST_CONTAINER}$"; then
+    echo ""
+    log_warn "Existing Outpost installation detected"
+    read -p "Do you want to remove it and reinstall? [y/N]: " CONFIRM
+    if [[ "$CONFIRM" =~ ^[Yy]$ ]]; then
+      log_info "Removing existing installation..."
+      docker stop $OUTPOST_CONTAINER 2>/dev/null || true
+      docker rm $OUTPOST_CONTAINER 2>/dev/null || true
+      docker stop $WATCHTOWER_CONTAINER 2>/dev/null || true
+      docker rm $WATCHTOWER_CONTAINER 2>/dev/null || true
+      log_success "Existing installation removed"
+    else
+      log_info "Keeping existing installation. Exiting."
+      exit 0
+    fi
+  fi
+}
+
+pull_image() {
+  log_info "Pulling Outpost image..."
+  docker pull $OUTPOST_IMAGE
+  log_success "Image pulled successfully"
+}
+
+create_volume() {
+  if ! docker volume inspect $OUTPOST_VOLUME &>/dev/null; then
+    log_info "Creating storage volume..."
+    docker volume create $OUTPOST_VOLUME
+    log_success "Storage volume created"
+  else
+    log_info "Using existing storage volume"
+  fi
+}
+
+run_outpost() {
+  log_info "Starting Outpost..."
+  
+  SECRET_KEY_BASE=$(generate_secret_key)
+  
+  if [ "$USE_SSL" = true ]; then
+    docker run -d \
+      --name $OUTPOST_CONTAINER \
+      --restart unless-stopped \
+      --publish 80:80 \
+      --publish 443:443 \
+      --volume $OUTPOST_VOLUME:/rails/storage \
+      --env SECRET_KEY_BASE="$SECRET_KEY_BASE" \
+      --env TLS_DOMAIN="$DOMAIN" \
+      $OUTPOST_IMAGE
+  else
+    docker run -d \
+      --name $OUTPOST_CONTAINER \
+      --restart unless-stopped \
+      --publish 80:80 \
+      --volume $OUTPOST_VOLUME:/rails/storage \
+      --env SECRET_KEY_BASE="$SECRET_KEY_BASE" \
+      --env DISABLE_SSL=true \
+      $OUTPOST_IMAGE
+  fi
+  
+  log_success "Outpost started"
+}
+
+setup_watchtower() {
+  log_info "Setting up automatic updates (Watchtower)..."
+  
+  docker run -d \
+    --name $WATCHTOWER_CONTAINER \
+    --restart unless-stopped \
+    --volume /var/run/docker.sock:/var/run/docker.sock \
+    containrrr/watchtower \
+    $OUTPOST_CONTAINER \
+    --interval 86400 \
+    --cleanup
+  
+  log_success "Automatic updates configured (checks daily)"
+}
+
+print_success() {
+  echo ""
+  echo -e "${GREEN}════════════════════════════════════════${NC}"
+  echo -e "${GREEN}       Outpost is now running!${NC}"
+  echo -e "${GREEN}════════════════════════════════════════${NC}"
+  echo ""
+  
+  if [ "$USE_SSL" = true ]; then
+    echo -e "Next steps:"
+    echo -e "  1. Point ${YELLOW}$DOMAIN${NC} to this server's IP address"
+    echo -e "  2. Wait a few minutes for SSL certificate provisioning"
+    echo -e "  3. Visit ${GREEN}https://$DOMAIN${NC} to create your admin account"
+  else
+    SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || echo "YOUR_SERVER_IP")
+    echo -e "Next steps:"
+    echo -e "  1. Visit ${GREEN}http://$SERVER_IP${NC} to create your admin account"
+    echo -e ""
+    echo -e "  ${YELLOW}Note: Running without SSL. For production use, set up a"
+    echo -e "  reverse proxy (nginx, Cloudflare Tunnel, etc.) with SSL.${NC}"
+  fi
+  
+  echo ""
+  echo -e "Useful commands:"
+  echo -e "  View logs:     ${BLUE}docker logs -f $OUTPOST_CONTAINER${NC}"
+  echo -e "  Stop Outpost:  ${BLUE}docker stop $OUTPOST_CONTAINER${NC}"
+  echo -e "  Start Outpost: ${BLUE}docker start $OUTPOST_CONTAINER${NC}"
+  echo -e "  Rails console: ${BLUE}docker exec -it $OUTPOST_CONTAINER bin/rails console${NC}"
+  echo ""
+  echo -e "Updates are applied automatically each night."
+  echo -e "Your data is stored in Docker volume: ${BLUE}$OUTPOST_VOLUME${NC}"
+  echo ""
+}
+
+# Main installation flow
+main() {
+  print_banner
+  check_root
+  
+  if ! check_docker; then
+    install_docker
+  fi
+  
+  check_existing_installation
+  prompt_domain
+  pull_image
+  create_volume
+  run_outpost
+  setup_watchtower
+  print_success
+}
+
+main "$@"

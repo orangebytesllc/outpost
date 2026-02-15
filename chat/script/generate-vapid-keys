@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Generates VAPID keys for Web Push notifications.
+#
+# Usage:
+#   script/generate-vapid-keys
+#
+# Output can be used directly as environment variables:
+#   VAPID_PUBLIC_KEY=...
+#   VAPID_PRIVATE_KEY=...
+
+require "openssl"
+require "base64"
+
+# Generate an EC key pair using the P-256 curve (required for VAPID)
+ec_key = OpenSSL::PKey::EC.generate("prime256v1")
+
+# Extract the private key (32 bytes)
+private_key_bn = ec_key.private_key
+private_key_bytes = private_key_bn.to_s(2).rjust(32, "\x00")
+
+# Extract the public key (uncompressed point format: 04 || x || y = 65 bytes)
+public_key_point = ec_key.public_key
+public_key_bytes = public_key_point.to_octet_string(:uncompressed)
+
+# Encode as URL-safe Base64 (no padding)
+def url_safe_base64(bytes)
+  Base64.urlsafe_encode64(bytes, padding: false)
+end
+
+public_key = url_safe_base64(public_key_bytes)
+private_key = url_safe_base64(private_key_bytes)
+
+puts "VAPID_PUBLIC_KEY=#{public_key}"
+puts "VAPID_PRIVATE_KEY=#{private_key}"

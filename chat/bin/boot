@@ -1,0 +1,80 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Process monitor that runs all processes defined in Procfile.
+# Handles graceful shutdown when receiving TERM/INT signals.
+
+require "yaml"
+
+class ProcessMonitor
+  SIGNALS = %w[INT TERM CLD].freeze
+
+  def initialize(procfile_path)
+    @procs = parse_procfile(procfile_path)
+    setup_signal_handlers
+    start_all
+    wait_all
+  end
+
+  private
+
+  def parse_procfile(path)
+    File.readlines(path).filter_map do |line|
+      line = line.strip
+      next if line.empty? || line.start_with?("#")
+
+      name, cmd = line.split(":", 2)
+      MonitoredProcess.new(name.strip, cmd.strip) if name && cmd
+    end
+  end
+
+  def setup_signal_handlers
+    SIGNALS.each do |signal|
+      Signal.trap(signal) { terminate_all }
+    end
+  end
+
+  def start_all
+    @procs.each(&:start)
+  end
+
+  def wait_all
+    @procs.each(&:wait)
+  end
+
+  def terminate_all
+    @procs.each(&:terminate)
+  end
+end
+
+class MonitoredProcess
+  def initialize(name, cmd)
+    @name = name
+    @cmd = cmd
+    @pid = nil
+  end
+
+  def start
+    puts "[boot] Starting #{@name}: #{@cmd}"
+    @pid = Process.spawn(@cmd)
+  end
+
+  def wait
+    Process.wait(@pid)
+  rescue Errno::ECHILD
+    nil
+  end
+
+  def terminate
+    return unless @pid
+
+    puts "[boot] Stopping #{@name} (PID #{@pid})"
+    Process.kill("TERM", @pid)
+  rescue Errno::ESRCH
+    nil
+  end
+end
+
+# Run the monitor
+procfile = File.expand_path("../Procfile", __dir__)
+ProcessMonitor.new(procfile)

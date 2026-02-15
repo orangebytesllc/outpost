@@ -1,8 +1,13 @@
 #!/bin/bash -e
 
-# If running the rails server then create or migrate existing database
-if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
-  ./bin/rails db:prepare
-fi
+# Docker entrypoint for Outpost
+# Runs setup-production before starting the application
 
+# Remove stale PID file if it exists
+rm -f tmp/pids/server.pid
+
+# Run production setup (database, directories, etc.)
+./bin/setup-production
+
+# Execute the main command (usually ./bin/boot)
 exec "${@}"
