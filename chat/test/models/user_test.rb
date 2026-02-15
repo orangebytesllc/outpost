@@ -272,6 +272,7 @@ class UserTest < ActiveSupport::TestCase
     user_a = users(:one)
     user_b = users(:two)
     dm = Room.find_or_create_dm(user_a, user_b, accounts(:one))
+    dm.messages.create!(body: "Hello", user: user_b)
 
     dms = user_a.direct_message_rooms_with_unread_status
 

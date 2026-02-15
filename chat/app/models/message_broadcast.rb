@@ -13,6 +13,9 @@ class MessageBroadcast
       partial: "messages/message",
       locals: { message: preloaded_message }
 
+    # For DMs: broadcast to recipient's sidebar if this is the first message
+    broadcast_new_dm_to_sidebar
+
     # Send push notifications to other room members
     send_push_notifications
   end
@@ -71,5 +74,20 @@ class MessageBroadcast
   def truncate_body(text, max_length: 100)
     return text if text.length <= max_length
     "#{text[0, max_length - 1]}..."
+  end
+
+  def broadcast_new_dm_to_sidebar
+    room = @message.room
+    return unless room.direct_message?
+
+    # Only broadcast on first message in the DM
+    return unless room.messages.count == 1
+
+    sender = @message.user
+    recipient = room.other_participant(sender)
+    return unless recipient
+
+    # Broadcast to recipient's sidebar
+    room.broadcast_to_user_sidebar(recipient)
   end
 end

@@ -50,17 +50,19 @@ class User < ApplicationRecord
   end
 
   # Get direct message rooms, ordered by most recent activity
+  # Only includes DMs that have at least one message
   def direct_message_rooms
-    rooms.direct_messages.left_joins(:messages)
+    rooms.direct_messages.joins(:messages)
       .group("rooms.id")
       .order(Arel.sql("MAX(messages.created_at) DESC NULLS LAST"))
   end
 
   # Get direct message rooms with unread status preloaded (avoids N+1)
   # Returns rooms with a `has_unread` attribute
+  # Only includes DMs that have at least one message
   def direct_message_rooms_with_unread_status
     rooms.direct_messages
-      .left_joins(:messages)
+      .joins(:messages)
       .joins("LEFT OUTER JOIN room_reads ON room_reads.room_id = rooms.id AND room_reads.user_id = #{id}")
       .group("rooms.id")
       .select(

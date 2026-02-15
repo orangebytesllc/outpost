@@ -103,19 +103,19 @@ class Room < ApplicationRecord
       room.memberships.create!(user: user_a)
       room.memberships.create!(user: user_b)
       room
-    end.tap do |room|
-      # Broadcast sidebar update to both users
-      broadcast_new_dm_to_user(room, user_a, user_b)
-      broadcast_new_dm_to_user(room, user_b, user_a)
     end
   end
 
-  def self.broadcast_new_dm_to_user(room, user, other_user)
+  # Broadcast DM to a user's sidebar (called after first message)
+  def broadcast_to_user_sidebar(user)
+    other_user = other_participant(user)
+    return unless other_user
+
     Turbo::StreamsChannel.broadcast_prepend_to(
       "user_#{user.id}_sidebar",
       target: "direct-messages-list",
       partial: "rooms/sidebar_dm",
-      locals: { dm: room, current_room: nil, other_user: other_user }
+      locals: { dm: self, current_room: nil, other_user: other_user }
     )
     # Also remove the "no conversations yet" placeholder
     Turbo::StreamsChannel.broadcast_remove_to(
