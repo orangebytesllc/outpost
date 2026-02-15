@@ -2,7 +2,7 @@
   model: message,
   url: room_messages_path(room),
   id: "message_form",
-  class: "flex gap-2",
+  class: "flex gap-2 items-end",
   data: { controller: "message-form", action: "turbo:submit-end->message-form#reset" }
 ) do |form| %>
   <%= form.text_area :body,
@@ -16,6 +16,6 @@
     autofocus: true
   %>
   <%= form.submit "Send",
-    class: "px-4 py-2 bg-[#00ff88] hover:bg-[#00cc6a] text-black font-medium border-2 border-black shadow-[3px_3px_0_0_#000] hover:shadow-[1px_1px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer uppercase tracking-wide text-sm"
+    class: "px-4 bg-[#00ff88] hover:bg-[#00cc6a] text-black font-medium border-2 border-black shadow-[3px_3px_0_0_#000] hover:shadow-[1px_1px_0_0_#000] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer uppercase tracking-wide text-sm self-stretch"
   %>
 <% end %>

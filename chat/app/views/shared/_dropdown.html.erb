@@ -1,0 +1,27 @@
+<%# Reusable dropdown component
+   Usage:
+   <%= render "shared/dropdown", button_class: "..." do |dropdown| %>
+     <% dropdown.with_trigger do %>
+       <!-- Your trigger button content -->
+     <% end %>
+     <% dropdown.with_menu do %>
+       <!-- Your menu items -->
+     <% end %>
+   <% end %>
+%>
+<div data-controller="dropdown" class="relative <%= local_assigns[:wrapper_class] %>">
+  <button 
+    type="button"
+    data-action="click->dropdown#toggle"
+    class="<%= local_assigns[:button_class] || 'p-1 text-neutral-500 hover:text-neutral-300 transition-colors' %>"
+  >
+    <%= yield :trigger %>
+  </button>
+  
+  <div 
+    data-dropdown-target="menu"
+    class="hidden absolute right-0 mt-1 z-50 min-w-32 bg-neutral-900 border-2 border-neutral-700 shadow-[4px_4px_0_0_#1a1a1a]"
+  >
+    <%= yield :menu %>
+  </div>
+</div>

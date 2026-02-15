@@ -22,7 +22,7 @@ Rails.application.routes.draw do
 
   # Chat
   resources :rooms, only: [ :show ] do
-    resources :messages, only: [ :create ]
+    resources :messages, only: [ :create, :update, :destroy ]
   end
 
   # Health check

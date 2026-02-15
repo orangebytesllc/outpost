@@ -64,4 +64,85 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test "update requires authentication" do
+    message = messages(:hello)
+
+    patch room_message_path(message.room, message), params: { message: { body: "Updated" } }
+
+    assert_redirected_to new_session_path
+  end
+
+  test "update modifies message body" do
+    sign_in_as users(:one)
+    message = messages(:hello)
+
+    patch room_message_path(message.room, message), params: { message: { body: "Updated message" } }
+
+    assert_redirected_to room_path(message.room)
+    assert_equal "Updated message", message.reload.body
+  end
+
+  test "update with turbo stream format" do
+    sign_in_as users(:one)
+    message = messages(:hello)
+
+    patch room_message_path(message.room, message),
+      params: { message: { body: "Turbo updated" } },
+      as: :turbo_stream
+
+    assert_response :success
+    assert_equal "Turbo updated", message.reload.body
+  end
+
+  test "update only allows owner to modify message" do
+    sign_in_as users(:two)
+    message = messages(:hello)
+
+    patch room_message_path(message.room, message), params: { message: { body: "Hacked" } }
+
+    assert_redirected_to room_path(message.room)
+    assert_not_equal "Hacked", message.reload.body
+  end
+
+  test "destroy requires authentication" do
+    message = messages(:hello)
+
+    delete room_message_path(message.room, message)
+
+    assert_redirected_to new_session_path
+  end
+
+  test "destroy removes message" do
+    sign_in_as users(:one)
+    message = messages(:hello)
+
+    assert_difference "Message.count", -1 do
+      delete room_message_path(message.room, message)
+    end
+
+    assert_redirected_to room_path(message.room)
+  end
+
+  test "destroy with turbo stream format" do
+    sign_in_as users(:one)
+    message = messages(:hello)
+
+    assert_difference "Message.count", -1 do
+      delete room_message_path(message.room, message), as: :turbo_stream
+    end
+
+    assert_response :success
+  end
+
+  test "destroy only allows owner to delete message" do
+    sign_in_as users(:two)
+    message = messages(:hello)
+
+    assert_no_difference "Message.count" do
+      delete room_message_path(message.room, message)
+    end
+
+    assert_redirected_to room_path(message.room)
+  end
 end
