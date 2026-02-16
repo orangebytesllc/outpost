@@ -3,9 +3,11 @@ require "test_helper"
 class AccountSetupTest < ActiveSupport::TestCase
   setup do
     # Clear existing data to test fresh setup
-    Membership.delete_all
     Message.delete_all
+    RoomRead.delete_all
+    Membership.delete_all
     Room.delete_all
+    PushSubscription.delete_all
     Session.delete_all
     User.delete_all
     Account.delete_all

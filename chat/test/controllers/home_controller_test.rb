@@ -4,8 +4,10 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
   test "redirects to setup when no account exists" do
     # Delete in correct order to respect foreign keys
     Message.delete_all
+    RoomRead.delete_all
     Membership.delete_all
     Room.delete_all
+    PushSubscription.delete_all
     Session.delete_all
     User.delete_all
     Account.delete_all

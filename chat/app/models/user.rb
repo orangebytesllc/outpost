@@ -27,6 +27,7 @@ class User < ApplicationRecord
 
   validates :email_address, presence: true, uniqueness: true
   validates :name, presence: true, format: { with: /\A\S.*\z/, message: "must contain non-whitespace characters" }
+  validates :password, length: { minimum: 8 }, if: -> { password.present? }
   validate :avatar_file_size
 
   def locked?

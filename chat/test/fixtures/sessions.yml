@@ -1,0 +1,9 @@
+one:
+  user: one
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+  ip_address: "127.0.0.1"
+
+two:
+  user: two
+  user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)"
+  ip_address: "192.168.1.1"

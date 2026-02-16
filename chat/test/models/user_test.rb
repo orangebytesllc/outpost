@@ -50,19 +50,20 @@ class UserTest < ActiveSupport::TestCase
 
   test "has many sessions" do
     user = users(:one)
+    initial_count = user.sessions.count
     user.sessions.create!
 
-    assert_equal 1, user.sessions.count
+    assert_equal initial_count + 1, user.sessions.count
   end
 
   test "destroys sessions when destroyed" do
     user = users(:one)
     user.sessions.create!
-    session_count_before = Session.count
+    user_session_count = user.sessions.count
 
     user.destroy
 
-    assert_equal session_count_before - 1, Session.count
+    assert_equal 0, Session.where(user_id: user.id).count
   end
 
   # Lockout methods
