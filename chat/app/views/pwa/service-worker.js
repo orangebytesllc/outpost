@@ -10,8 +10,8 @@ self.addEventListener("push", async (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       ...options,
-      icon: "/icon.png",
-      badge: "/icon.png"
+      icon: "/icon.png?v=2",
+      badge: "/icon.png?v=2"
     })
   );
 });

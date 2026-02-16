@@ -70,22 +70,22 @@ generate_secret_key() {
 }
 
 generate_vapid_keys() {
-  # Generate VAPID keys using OpenSSL (P-256 curve required for Web Push)
+  # Generate VAPID keys using the WebPush gem inside a temporary container
+  # This ensures keys are properly formatted for the web-push Ruby gem
   # Output: sets VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY global variables
   
-  local tmpdir=$(mktemp -d)
-  local privkey_file="$tmpdir/vapid_private.pem"
+  log_info "Generating VAPID keys for push notifications..."
   
-  # Generate EC private key
-  openssl ecparam -name prime256v1 -genkey -noout -out "$privkey_file" 2>/dev/null
+  local keys_output
+  keys_output=$(docker run --rm $OUTPOST_IMAGE bundle exec rails runner "keys = WebPush.generate_key; puts \"PUBLIC=#{keys.public_key}\"; puts \"PRIVATE=#{keys.private_key}\"" 2>/dev/null)
   
-  # Extract raw private key (32 bytes) and encode as URL-safe base64
-  VAPID_PRIVATE_KEY=$(openssl ec -in "$privkey_file" -outform DER 2>/dev/null | tail -c 32 | base64 | tr -d '\n' | tr '+/' '-_' | tr -d '=')
+  VAPID_PUBLIC_KEY=$(echo "$keys_output" | grep "^PUBLIC=" | cut -d= -f2-)
+  VAPID_PRIVATE_KEY=$(echo "$keys_output" | grep "^PRIVATE=" | cut -d= -f2-)
   
-  # Extract public key point (65 bytes uncompressed) and encode as URL-safe base64
-  VAPID_PUBLIC_KEY=$(openssl ec -in "$privkey_file" -pubout -outform DER 2>/dev/null | tail -c 65 | base64 | tr -d '\n' | tr '+/' '-_' | tr -d '=')
-  
-  rm -rf "$tmpdir"
+  if [ -z "$VAPID_PUBLIC_KEY" ] || [ -z "$VAPID_PRIVATE_KEY" ]; then
+    log_error "Failed to generate VAPID keys"
+    exit 1
+  fi
 }
 
 prompt_domain() {
@@ -146,8 +146,6 @@ run_outpost() {
   
   SECRET_KEY_BASE=$(generate_secret_key)
   generate_vapid_keys
-  
-  log_info "Generated VAPID keys for push notifications"
   
   if [ "$USE_SSL" = true ]; then
     docker run -d \
